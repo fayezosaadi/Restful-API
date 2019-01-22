@@ -1,46 +1,64 @@
 const cuid = require("cuid");
 const filter = require("lodash/filter");
-const { postsLists, commentsList } = require("../database/seeds");
+const findIndex = require("lodash/findIndex");
+const remove = require("lodash/remove");
 
-// get list of posts
-const getPosts = () => postsLists;
+const { customersList, addressesList } = require("../database/seeds");
 
-// get list of comments
-const getComments = ({ postId }) => ({
-  commentsList: filter(commentsList, { postId })
+// get list of customers
+const getCustomers = () => customersList;
+
+// get a single customer
+const getCustomer = ({ id }) => ({
+  customer: filter(customersList, { id })[0]
 });
 
-// get a single post
-const getPost = ({ id }) => ({
-  post: filter(postsLists, { id })[0]
+// get details address
+const getAddress = ({ customerId }) => ({
+  addressDetails: filter(addressesList, { customerId })[0]
 });
 
-// create a post
-const createPost = async ({ author, title, content }) => {
-  const id = cuid();
-  await postsLists.push({
-    id,
-    author,
-    title,
-    content
+// create a new customer
+const createCustomer = async ({
+  name,
+  street_address,
+  postal_code,
+  country
+}) => {
+  const customerId = cuid();
+  const addressId = cuid();
+
+  await customersList.push({
+    id: customerId,
+    name
+  });
+
+  await addressesList.push({
+    id: addressId,
+    customerId,
+    street_address,
+    postal_code,
+    country,
+    name
   });
 };
 
-// create a comment
-const createComment = async ({ postId, author, content }) => {
-  const id = cuid();
-  await commentsList.push({
-    id,
-    postId,
-    author,
-    content
-  });
+// update a customer
+const updateCustomer = async ({ id, params }) => {
+  const index = findIndex(customersList, { id });
+  customersList.splice(index, 1, { id, ...params });
+};
+
+// delete a customer
+const deleteCustomer = async ({ id }) => {
+  remove(customersList, { id });
 };
 
 module.exports = {
-  getPosts,
-  getComments,
-  getPost,
-  createPost,
-  createComment
+  getCustomers,
+  getCustomer,
+  getAddress,
+  createCustomer,
+  updateCustomer,
+  deleteCustomer
 };

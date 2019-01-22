@@ -1,34 +1,30 @@
-const cuid = require("cuid");
-const examplePostId = cuid();
 // initial data
-let postsLists = [
+let customersList = [
   {
-    id: examplePostId,
-    author: "Anonymous",
-    title: "EA newest game",
-    content:
-      "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's " +
-      "standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make " +
-      "a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, " +
-      "remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing " +
-      "Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions " +
-      "of Lorem Ipsum."
-  }
-];
-
-let commentsList = [
-  {
-    id: 1,
-    postId: examplePostId,
-    author: "Anonymous",
-    content: "This is by far the best blog post for this game."
+    id: "1",
+    name: "Rayan"
   },
   {
-    id: 2,
-    postId: examplePostId,
-    author: "Anonymous",
-    content: "A 5 stars post"
+    id: "2",
+    name: "Colin"
   }
 ];
 
-module.exports = { postsLists, commentsList };
+let addressesList = [
+  {
+    id: "1",
+    customerId: "2",
+    street_address: "123 west 12th",
+    postal_code: "b3h2ye",
+    country: "US"
+  },
+  {
+    id: "2",
+    customerId: "1",
+    street_address: "123 nw",
+    postal_code: "v6h3ze",
+    country: "US"
+  }
+];
+
+module.exports = { customersList, addressesList };
