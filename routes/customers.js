@@ -27,7 +27,7 @@ router.get("/:id", async (req, res) => {
   try {
     const [customer]  = await getCustomer({ id });
     const [address]  = await getAddress({ customerId: id });
-    res.status(200).send({ ...customer, ...address });
+    res.status(200).send({ ...address, ...customer });
   } catch({ message }) {
     console.error('get customer route', message);
     res.status(404).send({ message: `could not find customer with id ${id}` });
