@@ -4,8 +4,10 @@ const Pool = require('pg').Pool
 const pool = new Pool({
   user: 'postgres',
   host: 'localhost',
-  database: 'vrify',
+  database: process.env.NODE_ENV === "test" ? "vrify-test": "vrify",
   port: 5432,
+  min:1,
+  max:1
 });
 
 // get list of customers
@@ -117,5 +119,6 @@ module.exports = {
   deleteCustomer,
   createAddress,
   updateAddress,
-  deleteAddress
+  deleteAddress,
+  pool
 };

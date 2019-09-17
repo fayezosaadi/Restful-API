@@ -1,14 +1,27 @@
 const chai = require("chai");
+const { expect } = require("chai");
 const chaiHttp = require("chai-http");
 const server = require("../app.js");
-
-// During the test the env variable is set to test
-process.env.NODE_ENV = "test";
+const { pool } = require("../queries/customers");
 
 chai.should();
 chai.use(chaiHttp);
 
-describe("Customers", () => {
+before(async () => {
+  await pool.query('START TRANSACTION');
+  const { rows }  = await pool.query('INSERT INTO customers (name) VALUES ($1) RETURNING *', ["vrify-test"]);
+  const { id: customer_id } = rows[0];
+  await pool.query(
+    'INSERT INTO customer_addresses (customer_id, street_address, postal_code, country) VALUES ($1, $2, $3, $4)',
+    [customer_id, "1125 w12", "v6h3s3", "CA"]
+  );
+});
+
+after(async () => {
+  await pool.query('ROLLBACK');
+});
+
+describe("Customers", async () => {
   let customerId;
   describe("/GET customers", () => {
     it("it should GET all the customers", done => {
@@ -18,10 +31,10 @@ describe("Customers", () => {
         .end((err, res) => {
           const { id } = res.body.customersLists[0];
           customerId = id;
-
           res.should.have.status(200);
           res.body.customersLists.should.be.a("array");
-          res.body.customersLists.length.should.be.eql(2);
+          expect(res.body.customersLists[0].name).to.eq("vrify-test");
+          res.body.customersLists.length.should.be.eql(1);
           done();
         });
     });
@@ -33,42 +46,38 @@ describe("Customers", () => {
         .end((err, res) => {
           res.should.have.status(200);
           res.body.should.be.a("object");
-          res.body.should.have.property("street_address").eq("123 nw");
+          res.body.should.have.property("street_address").eq("1125 w12");
+          res.body.should.have.property("postal_code").eq("v6h3s3");
+          res.body.should.have.property("country").eq("CA");
           done();
         });
     });
+  });
 
-    describe("/POST customers", () => {
+  describe("/POST customers", () => {
       it("it should not POST a customer without name field", done => {
-        const customer = {};
+        const payload = {};
 
         chai
           .request(server)
           .post("/customers")
-          .send(customer)
+          .send(payload)
           .end((err, res) => {
             res.should.have.status(400);
             res.body.should.be.a("object");
             res.body.should.have.property("message");
-            res.body.message.should.equal(
-              "please make sure you have sent the correct format for creating a customer: { name, street_address, postal_code, country }"
-            );
+            res.body.message.should.equal("param name is missing");
             done();
           });
       });
 
       it("it should POST a customer", done => {
-        const customer = {
-          name: "VRIFY",
-          street_address: "1123",
-          postal_code: "vdf",
-          country: "US"
-        };
+        const payload = { name: "VRIFY" };
 
         chai
           .request(server)
           .post("/customers")
-          .send(customer)
+          .send(payload)
           .end((err, res) => {
             res.should.have.status(201);
             res.body.should.be.a("object");
@@ -80,24 +89,37 @@ describe("Customers", () => {
       });
     });
 
-    describe("/PUT customers", () => {
+  describe("/PUT customers", () => {
       it("it should UPDATE a customer name", done => {
-        const customer = { name: "VRIFY" };
+        const payload = { name: "VRIFY" };
 
         chai
           .request(server)
           .put("/customers/1")
-          .send(customer)
+          .send(payload)
           .end((err, res) => {
             res.should.have.status(200);
             res.body.should.be.a("object");
             res.body.should.have.property("message");
-            res.body.message.should.equal(
-              "customer has been updated successfully"
-            );
+            res.body.message.should.equal("customer has been updated successfully");
             done();
           });
       });
     });
+
+  describe("/DELETE customers", () => {
+    it("it should DELETE a customer", done => {
+      chai
+        .request(server)
+        .delete(`/customers/${customerId}`)
+        .end((err, res) => {
+          res.should.have.status(200);
+          res.body.should.be.a("object");
+          res.body.should.have.property("message");
+          res.body.message.should.equal("customer has been deleted successfully");
+          done();
+        });
+    });
   });
+
 });
