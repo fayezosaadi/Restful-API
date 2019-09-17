@@ -112,7 +112,7 @@ router.delete("/address/:id", async (req, res) => {
   const { id } = req.params;
   try {
     await deleteAddress({ id });
-    res.status(200).send({ message: "customer has been deleted successfully" });
+    res.status(200).send({ message: "address has been deleted successfully" });
   } catch ({ message }) {
     console.error('delete address route', message);
     res.status(500).send({ message });
