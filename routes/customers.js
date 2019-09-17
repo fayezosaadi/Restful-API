@@ -6,43 +6,63 @@ const {
   getAddress,
   createCustomer,
   updateCustomer,
-  deleteCustomer
+  deleteCustomer,
+  createAddress,
+  updateAddress,
+  deleteAddress
 } = require("../queries/customers");
 
 // get list of customers
-router.get("/", (req, res) => {
-  res.status(200).send({ customersLists: getCustomers() });
+router.get("/", async (req, res) => {
+  try {
+    res.status(200).send({ customersLists: await getCustomers() });
+  } catch ({ message }) {
+    res.status(404).send({ message });
+  }
 });
 
 // get a single customer and address details
 router.get("/:id", async (req, res) => {
   const { id } = req.params;
-
   try {
-    const { customer } = await getCustomer({ id });
-    const {
-      addressDetails: { street_address, postal_code, country }
-    } = await getAddress({ customerId: id });
-
-    res.status(200).send({ ...customer, street_address, postal_code, country });
-  } catch {
-    res.status(400).send({ message: `could not find customer with id ${id}` });
+    const [customer]  = await getCustomer({ id });
+    const [address]  = await getAddress({ customerId: id });
+    res.status(200).send({ ...customer, ...address });
+  } catch({ message }) {
+    console.error('get customer route', message);
+    res.status(404).send({ message: `could not find customer with id ${id}` });
   }
 });
 
 // create a customer
 router.post("/", async (req, res) => {
-  const { name, street_address, postal_code, country } = req.body;
+  const { name } = req.body;
 
-  if (name && street_address && postal_code && country) {
-    await createCustomer({ name, street_address, postal_code, country });
-
-    res.status(201).send({ message: "customer has been created successfully" });
+  if (name) {
+    try {
+      await createCustomer({ name });
+      res.status(201).send({ message: "customer has been created successfully" });
+    } catch ({ message }) {
+      res.status(500).send({ message });
+    }
   } else {
-    res.status(400).send({
-      message:
-        "please make sure you have sent the correct format for creating a customer: { name, street_address, postal_code, country }"
-    });
+    res.status(400).send({ message: "param name is missing" });
+  }
+});
+
+// create customer address
+router.post("/address/:id", async (req, res) => {
+  const { id } = req.params;
+  const { street_address, postal_code, country } = req.body;
+  if (street_address && postal_code && country) {
+    try {
+      await createAddress({ customer_id: id, street_address, postal_code, country });
+      return res.status(201).send({ message: "customer address has been created successfully" });
+    } catch ({ message }) {
+      return res.status(500).send({ message });
+    }
+  } else {
+    return res.status(400).send({ message: "params street_address, postal_code, country are missing" });
   }
 });
 
@@ -50,15 +70,53 @@ router.post("/", async (req, res) => {
 router.put("/:id", async (req, res) => {
   const { id } = req.params;
   const { name } = req.body;
-  await updateCustomer({ id, params: { name } });
-  res.status(200).send({ message: "customer has been updated successfully" });
+  if (name) {
+    try {
+      await updateCustomer({id, name});
+      return res.status(200).send({ message: "customer has been updated successfully" });
+    } catch ({ message }) {
+      return res.status(500).send({ message });
+    }
+  }
+  return res.status(400).send({ message: "param name is missing" });
+});
+
+// update customer addresses
+router.put("/address/:id", async (req, res) => {
+  const { id } = req.params;
+  const { street_address, postal_code, country } = req.body;
+    if (street_address || postal_code || country) {
+      try {
+        await updateAddress({customer_id: id, street_address, postal_code, country});
+        return res.status(200).send({message: "customer address has been updated successfully"});
+      } catch ({ message }) {
+        return res.status(500).send({message});
+      }
+    }
+    return res.status(400).send({ message: "please make sure you have included correct params" });
 });
 
 // delete customer data
 router.delete("/:id", async (req, res) => {
   const { id } = req.params;
-  await deleteCustomer({ id });
-  res.status(200).send({ message: "customer has been deleted successfully" });
+  try {
+    await deleteCustomer({ id });
+    res.status(200).send({ message: "customer has been deleted successfully" });
+  } catch ({ message }) {
+    console.error('delete customer route', message);
+    res.status(500).send({ message });
+  }
+});
+
+router.delete("/address/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    await deleteAddress({ id });
+    res.status(200).send({ message: "customer has been deleted successfully" });
+  } catch ({ message }) {
+    console.error('delete address route', message);
+    res.status(500).send({ message });
+  }
 });
 
 module.exports = router;
